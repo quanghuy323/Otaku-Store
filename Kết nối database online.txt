@@ -1,0 +1,3 @@
+Server name : otaku.database.windows.net
+Login : weaboo
+Password : Otaku123
