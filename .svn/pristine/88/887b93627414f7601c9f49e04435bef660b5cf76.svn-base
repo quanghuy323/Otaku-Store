@@ -1,0 +1,121 @@
+﻿using Data;
+using OtakuStore.ViewModels;
+using Service;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+
+namespace OtakuStore.Controllers
+{
+    public class CartController : Controller
+    {
+        #region field
+        IAccountService _accountService;
+        IProductService _productService;
+        IImageService _imageService;
+        IManufactorService _manufactorService;
+        ICategoryService _categoryService;
+        IAnimeService _animeService;
+        ITagService _tagService;
+        IOrderProductService _orderProductService;
+        #endregion
+
+        #region ctor
+        public CartController(IAccountService _accountService, IProductService _productService, IImageService _imageService,
+            IManufactorService _manufactorService, ICategoryService _categoryService, IAnimeService _animeService, ITagService _tagService, IOrderProductService _orderProductService)
+        {
+            this._accountService = _accountService;
+            this._productService = _productService;
+            this._imageService = _imageService;
+            this._manufactorService = _manufactorService;
+            this._categoryService = _categoryService;
+            this._animeService = _animeService;
+            this._orderProductService = _orderProductService;
+        }
+        #endregion
+
+        private List<OrderProduct> cart;
+
+        public ActionResult CartPartial()
+        {
+            if (Session["cart"] == null)
+            {
+                Session["cart"] = new List<OrderProduct>();
+            }
+            return PartialView("_CartPartialView");
+        }
+        public ActionResult viewCart()
+        {
+            //CartViewModel model = new CartViewModel();
+            //cart = Session["cart"] as List<OrderProduct>;
+            //if (cart == null)
+            //{
+            //    cart = new List<OrderProduct>();
+            //}
+            //model.list = cart;
+            return View();
+        }
+
+        public ActionResult addToCart(int id, int? quantity)
+        {
+            cart = Session["cart"] as List<OrderProduct>;
+            if (cart == null)
+            {
+                cart = new List<OrderProduct>();
+            }
+            if(quantity == null)
+            {
+                quantity = 1;
+            }
+            bool flag = false;
+            foreach(var item in cart){
+                if(item.ProductID == id)
+                {
+                    item.Quantity = item.Quantity + quantity;
+                    flag = true;
+                }
+            }
+            if (!flag)
+            {
+                OrderProduct product = new OrderProduct();
+                product.ProductID = id;
+                product.Quantity = quantity;
+                product.Name = _productService.GetById(id).Name;
+                product.Price = _productService.GetById(id).Price;
+                cart.Add(product);
+            }  
+            Session["cart"] = cart;
+            return PartialView();
+        }
+
+        public ActionResult Delete(int id)
+        {
+            cart = Session["cart"] as List<OrderProduct>;
+            foreach (var item in cart)
+            {
+                if (item.ProductID == id)
+                {
+                    cart.Remove(item);
+                    break;
+                }
+            }
+            return RedirectToAction("showCart");
+        }
+
+        public ActionResult showCart()
+        {
+            ShowCartViewModel model = new ShowCartViewModel();
+            cart = Session["cart"] as List<OrderProduct>;
+            if (cart == null)
+            {
+                cart = new List<OrderProduct>();
+            }
+            model.list = cart;
+            model.image = _imageService.GetAll().ToList();
+            model.manufactor = _manufactorService.GetAll().ToList();
+            return PartialView(model);
+        }
+    }
+}
